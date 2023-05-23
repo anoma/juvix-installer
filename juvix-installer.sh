@@ -5,9 +5,11 @@
 
 set -u
 
+JUVIX_RELEASE_ROOT="https://github.com/anoma/juvix/releases"
+
 usage() {
     cat <<EOF
-juvix-installer
+juvix-installer 0.1.0
 
 USAGE:
     juvix-installer
@@ -17,8 +19,31 @@ EOF
 main() {
     downloader --check
     get_architecture
-    say "$RETVAL"
-    usage
+    need_cmd uname
+    need_cmd mktemp
+    need_cmd chmod
+    need_cmd mkdir
+    need_cmd rm
+    need_cmd rmdir
+
+    get_architecture || return 1
+    local _arch="$RETVAL"
+    assert_nz "$_arch" "arch"
+
+    local _dir
+    if ! _dir="$(ensure mktemp -d)"; then
+        exit 1
+    fi
+    local _filename="juvix-${_arch}.tar.gz"
+    local _file="${_dir}/${_filename}"
+
+    local _url="${JUVIX_RELEASE_ROOT}/latest/download/${_filename}"
+
+    printf '%s\n' 'info: downloading juvix' 1>&2
+
+    ensure mkdir -p "$_dir"
+    ensure downloader "$_url" "$_file" "$_arch"
+    say "$_dir"
 }
 
 get_architecture() {
@@ -35,7 +60,7 @@ get_architecture() {
             ;;
 
         Darwin)
-            _ostype=apple
+            _ostype=macos
             ;;
 
         *)
@@ -61,7 +86,7 @@ get_architecture() {
         err "linux-aarch64 is not supported"
     fi
 
-    _arch="${_cputype}-${_ostype}"
+    _arch="${_ostype}-${_cputype}"
 
     RETVAL="$_arch"
 }
@@ -127,16 +152,22 @@ downloader() {
         get_ciphersuites_for_curl
         _ciphersuites="$RETVAL"
         if [ -n "$_ciphersuites" ]; then
-            _err=$(curl "$_retry" --proto '=https' --tlsv1.2 --ciphers "$_ciphersuites" --silent --show-error --fail --location "$1" --output "$2" 2>&1)
+            # $_retry must not be double-quoted
+            # shellcheck disable=SC2086
+            _err=$(curl $_retry --proto '=https' --tlsv1.2 --ciphers "$_ciphersuites" --silent --show-error --fail --location "$1" --output "$2" 2>&1)
             _status=$?
         else
             echo "Warning: Not enforcing strong cipher suites for TLS, this is potentially less secure"
             if ! check_help_for "$3" curl --proto --tlsv1.2; then
                 echo "Warning: Not enforcing TLS v1.2, this is potentially less secure"
-                _err=$(curl "$_retry" --silent --show-error --fail --location "$1" --output "$2" 2>&1)
+                # $_retry must not be double-quoted
+                # shellcheck disable=SC2086
+                _err=$(curl $_retry --silent --show-error --fail --location "$1" --output "$2" 2>&1)
                 _status=$?
             else
-                _err=$(curl "$_retry" --proto '=https' --tlsv1.2 --silent --show-error --fail --location "$1" --output "$2" 2>&1)
+                # $_retry must not be double-quoted
+                # shellcheck disable=SC2086
+                _err=$(curl $_retry --proto '=https' --tlsv1.2 --silent --show-error --fail --location "$1" --output "$2" 2>&1)
                 _status=$?
             fi
         fi
@@ -270,6 +301,59 @@ get_strong_ciphersuites_for() {
         # Begin with SECURE128 (and higher) then remove/add to build cipher suites. Produces same 9 cipher suites as OpenSSL but in slightly different order.
         echo "SECURE128:-VERS-SSL3.0:-VERS-TLS1.0:-VERS-TLS1.1:-VERS-DTLS-ALL:-CIPHER-ALL:-MAC-ALL:-KX-ALL:+AEAD:+ECDHE-ECDSA:+ECDHE-RSA:+AES-128-GCM:+CHACHA20-POLY1305:+AES-256-GCM"
     fi
+}
+
+check_help_for() {
+    local _arch
+    local _cmd
+    local _arg
+    _arch="$1"
+    shift
+    _cmd="$1"
+    shift
+
+    local _category
+    if "$_cmd" --help | grep -q 'For all options use the manual or "--help all".'; then
+      _category="all"
+    else
+      _category=""
+    fi
+
+    case "$_arch" in
+
+        *macos*)
+        if check_cmd sw_vers; then
+            case $(sw_vers -productVersion) in
+                10.*)
+                    # If we're running on macOS, older than 10.13, then we always
+                    # fail to find these options to force fallback
+                    if [ "$(sw_vers -productVersion | cut -d. -f2)" -lt 13 ]; then
+                        # Older than 10.13
+                        echo "Warning: Detected macOS platform older than 10.13"
+                        return 1
+                    fi
+                    ;;
+                11.*)
+                    # We assume Big Sur will be OK for now
+                    ;;
+                *)
+                    # Unknown product version, warn and continue
+                    echo "Warning: Detected unknown macOS major version: $(sw_vers -productVersion)"
+                    echo "Warning TLS capabilities detection may fail"
+                    ;;
+            esac
+        fi
+        ;;
+
+    esac
+
+    for _arg in "$@"; do
+        if ! "$_cmd" --help "$_category" | grep -q -- "$_arg"; then
+            return 1
+        fi
+    done
+
+    true # not strictly needed
 }
 
 main "$@" || exit 1
