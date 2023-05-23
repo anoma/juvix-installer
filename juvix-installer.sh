@@ -50,15 +50,17 @@ main() {
     local _adjust_profile_answer="$RETVAL"
 
     write_env
-    # printf '%s\n' 'info: downloading juvix' 1>&2
-    # ensure mkdir -p "$_dir"
-    # ensure downloader "$_url" "$_file" "$_arch"
-    # printf '%s\n' "info: copying juvix into ${JUVIX_BIN}" 1>&2
-    # ensure mkdir -p "${JUVIX_BIN}"
-    # ensure tar -xzf "$_file" -C ${JUVIX_BIN}
-    # ignore rm "$_file"
-    # ignore rmdir "$_dir"
-    #
+
+    printf '%s\n' 'info: downloading juvix' 1>&2
+    ensure mkdir -p "$_dir"
+    ensure downloader "$_url" "$_file" "$_arch"
+
+    printf '%s\n' "info: copying juvix into ${JUVIX_BIN}" 1>&2
+    ensure mkdir -p "${JUVIX_BIN}"
+    ensure tar -xzf "$_file" -C ${JUVIX_BIN}
+    ignore rm "$_file"
+    ignore rmdir "$_dir"
+
     adjust_profile "$_adjust_profile_answer" "$_shell_name" "$_profile_path"
 }
 
