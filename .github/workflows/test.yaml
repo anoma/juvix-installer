@@ -5,8 +5,7 @@ on:
   pull_request:
 
 jobs:
-  shellcheck:
-    name: Shellcheck
+  test-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -15,6 +14,22 @@ jobs:
           shellcheck -x juvix-installer.sh
           cd test
           shellcheck -x stub_test.sh
+
+      - name: stub test juvix-installer
+        shell: bash
+        run: |
+          cd test
+          ./stub_test.sh
+
+      - name: test juvix-installer
+        run: |
+          cd test
+          ./test.sh
+
+  test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
 
       - name: stub test juvix-installer
         shell: bash

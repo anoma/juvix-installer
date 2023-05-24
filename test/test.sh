@@ -22,8 +22,6 @@ if [ ! -f "$XDG_DATA_HOME"/juvix/env ]; then
     die "juvix env file was not copied to the output"
 fi
 
-_cmd_output=$("$XDG_BIN_HOME"/juvix)
-
 if ! "$XDG_BIN_HOME"/juvix --help; then
     die "juvix binary at $XDG_BIN_HOME/juvix returned non-zero exit code"
 fi
