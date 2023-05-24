@@ -60,12 +60,57 @@ curl_stub() {
     cp "$STUB_TAR" "$_output"
 }
 
+wget_stub() {
+    local _output
+    local _location
+    while [ "$#" -gt 0 ]; do
+        case $1 in
+            -O)
+                _output="$2"
+                shift
+                shift
+                ;;
+            --*|-*)
+                shift
+                shift
+                ;;
+            *)
+                _location="$1"
+                shift
+                ;;
+        esac
+    done
+    if [ -z "$_output" ]; then die "wget_stub: output missing"; fi
+    if [ -z "$_location" ]; then die "wget_stub: location missing"; fi
+    if ! [ "$EXPECTED_LOCATION" = "$_location" ]; then
+        die "wget was passed location: $_location, expected $EXPECTED_LOCATION"
+    fi
+    cp "$STUB_TAR" "$_output"
+}
+
+command_stub_no_curl() {
+    while [ "$#" -gt 0 ]; do
+        case $1 in
+            curl)
+                return 1
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+}
+
 uname() {
     uname_stub "$@"
 }
 
 curl() {
     curl_stub "$@"
+}
+
+wget() {
+    wget_stub "$@"
 }
 
 run_assertion_ok() {
@@ -123,4 +168,23 @@ STUB_UNAME_S=Linux
 EXPECTED_LOCATION=$(expected_location 'linux' 'x86_64')
 JUVIX_INSTALLER_NONINTERACTIVE=1
 unset SHELL
+run_assertion_ok
+
+
+# Test: wget is called if curl is not available
+command() {
+    command_stub_no_curl "$@"
+}
+
+unset curl
+
+curl() {
+    die "I shouldn't be called"
+}
+
+STUB_UNAME_M=arm64
+STUB_UNAME_S=Darwin
+EXPECTED_LOCATION=$(expected_location 'macos' 'aarch64')
+JUVIX_INSTALLER_NONINTERACTIVE=1
+SHELL=bash
 run_assertion_ok
