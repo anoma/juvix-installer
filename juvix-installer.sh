@@ -57,7 +57,7 @@ main() {
 
     printf '%s\n' "info: copying juvix into ${JUVIX_BIN}" 1>&2
     ensure mkdir -p "${JUVIX_BIN}"
-    ensure tar -xzf "$_file" -C ${JUVIX_BIN}
+    ensure tar -xzf "$_file" -C "${JUVIX_BIN}"
     ignore rm "$_file"
     ignore rmdir "$_dir"
 
@@ -68,7 +68,7 @@ main() {
 # Writes a script to $JUVIX_DIR/env that, when sourced, prepends the
 # ${JUVIX_BIN} directory to $PATH if it is not already present there.
 write_env() {
-    ensure mkdir -p ${JUVIX_DIR}
+    ensure mkdir -p "${JUVIX_DIR}"
     local _env_file="${JUVIX_DIR}/env"
     cat <<-EOF > "$_env_file" || err "Failed to create env file: $_env_file"
 case ":\$PATH:" in
@@ -293,13 +293,11 @@ ask_profile() {
     RETVAL="$_profile_action"
 }
 
+# Adjust the user profile to prepend the JUVIX_BIN to the PATH
 adjust_profile() {
     local _profile_action=$1
     local _shell_name=$2
     local _profile_path=$3
-
-    echo $_profile_path
-    echo $_shell_name
 
     case "$_profile_action" in
         adjust)
