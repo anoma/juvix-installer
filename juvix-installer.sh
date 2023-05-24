@@ -5,10 +5,11 @@
 
 set -u
 
-JUVIX_RELEASE_ROOT="https://github.com/anoma/juvix/releases"
+JUVIX_RELEASE_ROOT="${JUVIX_RELEASE_ROOT:-https://github.com/anoma/juvix/releases}"
 
 JUVIX_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/juvix
 JUVIX_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
+JUVIX_INSTALLER_NONINTERACTIVE=${JUVIX_INSTALLER_NONINTERACTIVE:=0}
 
 usage() {
     cat <<EOF
@@ -267,29 +268,33 @@ ask_profile() {
     local _profile_answer
     local _profile_action
 
-    while true; do
-            echo "-------------------------------------------------------------------------------"
-            echo ""
-            echo "Detected $_shell_name shell on your system..."
-            echo "Do you want to automatically prepend the required PATH variable to \"${_profile_file}\"?"
-            echo ""
-            echo "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
-            echo ""
-            read -r _profile_answer </dev/tty
-        case $_profile_answer in
-            [Yy]* | "")
-                _profile_action="adjust"
-                break
-                ;;
-            [Nn]*)
-                _profile_action="noop"
-                break
-                ;;
+    if [ -z "${JUVIX_INSTALLER_NONINTERACTIVE}" ]; then
+        while true; do
+                echo "-------------------------------------------------------------------------------"
+                echo ""
+                echo "Detected $_shell_name shell on your system..."
+                echo "Do you want to automatically prepend the required PATH variable to \"${_profile_file}\"?"
+                echo ""
+                echo "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
+                echo ""
+                read -r _profile_answer </dev/tty
+            case $_profile_answer in
+                [Yy]* | "")
+                    _profile_action="adjust"
+                    break
+                    ;;
+                [Nn]*)
+                    _profile_action="noop"
+                    break
+                    ;;
 
-            *)
-                ;;
-        esac
-    done
+                *)
+                    ;;
+            esac
+        done
+    else
+        _profile_action="noop"
+    fi
     RETVAL="$_profile_action"
 }
 
