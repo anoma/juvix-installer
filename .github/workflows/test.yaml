@@ -14,7 +14,7 @@ jobs:
         run: |
           shellcheck -x juvix-installer.sh
           cd test
-          shellcheck -x test.sh
+          shellcheck -x stub_test.sh
 
       - name: stub test juvix-installer
         shell: bash
