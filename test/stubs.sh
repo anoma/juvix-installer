@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# shellcheck shell=dash
 
 set -u
 
@@ -27,7 +28,7 @@ uname_stub() {
 curl_stub() {
     local _output
     local _location
-    while [[ "$#" -gt 0 ]]; do
+    while [ "$#" -gt 0 ]; do
         case $1 in
             --location)
                 _location="$2"
@@ -47,7 +48,7 @@ curl_stub() {
     if [ -z "$_output" ]; then die "curl_stub: output missing"; fi
     if [ -z "$_location" ]; then die "curl_stub: location missing"; fi
     if ! [ "$EXPECTED_LOCATION" = "$_location" ]; then
-        die "curl was passed location: "$_location", expected $EXPECTED_LOCATION"
+        die "curl was passed location: $_location, expected $EXPECTED_LOCATION"
     fi
     cp "$STUB_TAR" "$_output"
 }

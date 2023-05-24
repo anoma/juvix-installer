@@ -11,9 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@2.0.0
-        env:
-          SHELLCHECK_OPTS: -x
+        run: |
+          shellcheck -x juvix-installer.sh
+          cd test
+          shellcheck -x test.sh
+
       - name: test juvix-installer
         run: |
           cd test
