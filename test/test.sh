@@ -1,126 +1,29 @@
 #!/usr/bin/env sh
-# shellcheck shell=dash
 
 set -u
+
+die() { echo "$*" >&2; exit 2; }
 
 # Setup temp directory
 BASE_TMP=$(mktemp -d)
 trap 'rm -rf -- "$BASE_TMP"' EXIT
 
-# common stub parameters
-STUB_TAR=juvix.tar.gz
+export XDG_DATA_HOME=$(mktemp -d "$BASE_TMP"/data.XXXXX)
+export XDG_BIN_HOME=$(mktemp -d "$BASE_TMP"/bin.XXXXX)
+export JUVIX_INSTALLER_NONINTERACTIVE=1
 
-die() { echo "$*" >&2; exit 2; }
+../juvix-installer.sh
 
-uname_stub() {
-    for arg in "$@"; do
-        OPTIND=1
-        while getopts :sm sub_arg "$arg"; do
-            case "$sub_arg" in
-                m)
-                    echo "$STUB_UNAME_M"
-                    exit 0
-                    ;;
-                s)
-                    echo "$STUB_UNAME_S"
-                    exit 0
-                    ;;
-                *)
-                    ;;
-            esac
-        done
-    done
-}
+if [ ! -f "$XDG_BIN_HOME"/juvix ]; then
+    die "juvix binary was not copied to the output"
+fi
 
-curl_stub() {
-    local _output
-    local _location
-    while [ "$#" -gt 0 ]; do
-        case $1 in
-            --location)
-                _location="$2"
-                shift
-                shift
-                ;;
-            --output)
-                _output="$2"
-                shift
-                shift
-                ;;
-            *)
-                shift
-                ;;
-        esac
-    done
-    if [ -z "$_output" ]; then die "curl_stub: output missing"; fi
-    if [ -z "$_location" ]; then die "curl_stub: location missing"; fi
-    if ! [ "$EXPECTED_LOCATION" = "$_location" ]; then
-        die "curl was passed location: $_location, expected $EXPECTED_LOCATION"
-    fi
-    cp "$STUB_TAR" "$_output"
-}
+if [ ! -f "$XDG_DATA_HOME"/juvix/env ]; then
+    die "juvix env file was not copied to the output"
+fi
 
-uname() {
-    uname_stub "$@"
-}
+_cmd_output=$("$XDG_BIN_HOME"/juvix)
 
-curl() {
-    curl_stub "$@"
-}
-
-run_assertion_ok() {
-    XDG_DATA_HOME=$(mktemp -d "$BASE_TMP"/data.XXXXX)
-    XDG_BIN_HOME=$(mktemp -d "$BASE_TMP"/bin.XXXXX)
-
-    . ../juvix-installer.sh
-    if [ ! -f "$XDG_BIN_HOME"/juvix ]; then
-        die "juvix binary was not copied to the output"
-    fi
-
-    if [ ! -f "$XDG_DATA_HOME"/juvix/env ]; then
-        die "juvix env file was not copied to the output"
-    fi
-
-    local _cmd_output
-    _cmd_output=$("$XDG_BIN_HOME"/juvix)
-
-    if ! [ "$_cmd_output" = "Hello from Juvix" ]; then
-        die "juvix binary did not produce expected output"
-    fi
-}
-
-expected_location() {
-    printf "https://github.com/anoma/juvix/releases/latest/download/juvix-%s-%s.tar.gz" "$1" "$2"
-}
-
-# Test: OS=Dawrin,arch=arm64,curl
-STUB_UNAME_M=arm64
-STUB_UNAME_S=Darwin
-EXPECTED_LOCATION=$(expected_location 'macos' 'aarch64')
-JUVIX_INSTALLER_NONINTERACTIVE=1
-SHELL=bash
-run_assertion_ok
-
-# Test: OS=Dawrin,arch=x86_64,curl
-STUB_UNAME_M=x86_64
-STUB_UNAME_S=Darwin
-EXPECTED_LOCATION=$(expected_location 'macos' 'x86_64')
-JUVIX_INSTALLER_NONINTERACTIVE=1
-SHELL=bash
-run_assertion_ok
-
-# Test: OS=Linux,arch=x86_64,curl
-STUB_UNAME_M=x86_64
-STUB_UNAME_S=Linux
-EXPECTED_LOCATION=$(expected_location 'linux' 'x86_64')
-JUVIX_INSTALLER_NONINTERACTIVE=1
-SHELL=bash
-run_assertion_ok
-
-# Test: OS=Linux,arch=amd64,curl
-STUB_UNAME_M=amd64
-STUB_UNAME_S=Linux
-EXPECTED_LOCATION=$(expected_location 'linux' 'x86_64')
-JUVIX_INSTALLER_NONINTERACTIVE=1
-unset SHELL
-run_assertion_ok
+if ! "$XDG_BIN_HOME"/juvix --help; then
+    die "juvix binary at $XDG_BIN_HOME/juvix returned non-zero exit code"
+fi
