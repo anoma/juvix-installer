@@ -207,7 +207,7 @@ downloader() {
 
 find_shell_name() {
     local _shell_name
-    case $SHELL in
+    case ${SHELL:=""} in
         */zsh)
             _shell_name="zsh" ;;
         */bash)
