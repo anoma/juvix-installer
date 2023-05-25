@@ -50,7 +50,7 @@ main() {
     local _file="${_dir}/${_filename}"
     local _url="${JUVIX_RELEASE_ROOT}/latest/download/${_filename}"
 
-    local _assume_yes
+    local _assume_yes="no"
     for arg in "$@"; do
         case "$arg" in
             --help)
