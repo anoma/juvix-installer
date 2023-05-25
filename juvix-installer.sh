@@ -116,6 +116,7 @@ main() {
 write_env() {
     ensure mkdir -p "${JUVIX_DIR}"
     local _env_file="${JUVIX_DIR}/env"
+    local _fish_env_file="${JUVIX_DIR}/env.fish"
     cat <<-EOF > "$_env_file" || err "Failed to create env file: $_env_file"
 case ":\$PATH:" in
     *:"${JUVIX_BIN}":*)
@@ -124,6 +125,9 @@ case ":\$PATH:" in
         export PATH="${JUVIX_BIN}:\$PATH"
         ;;
 esac
+EOF
+    cat <<-EOF > "$_fish_env_file" || err "Failed to create env file: $_fish_env_file"
+set -gx PATH "$JUVIX_BIN" \$PATH # juvix-env
 EOF
 }
 
@@ -346,28 +350,31 @@ ask_profile() {
 
 # Adjust the user profile to prepend the JUVIX_BIN to the PATH
 adjust_profile() {
-    local _profile_action=$1
+    local _adjust_profile=$1
     local _shell_name=$2
     local _profile_path=$3
 
-    case "$_profile_action" in
-        adjust)
+    local _env_file=
+    case "$_adjust_profile" in
+        yes)
             case "$_shell_name" in
                 "")
                     warn_path "Couldn't figure out login shell!"
                     return
                     ;;
                 fish)
-                    mkdir -p "${_profile_path%/*}"
+                    _env_file="env.fish"
                     sed -i -e '/# juvix-env$/ s/^#*/#/' "${_profile_path}"
-                    printf "\n%s" "set -gx PATH $JUVIX_BIN \$PATH # juvix-env" >> "${_profile_path}"
+                    printf "\n%s" "[ -f \"${JUVIX_DIR}/env.fish\" ] && source \"${JUVIX_DIR}/env.fish\" # juvix-env" >> "${_profile_path}"
                     ;;
                 bash)
+                    _env_file="env"
                     sed -i -e '/# juvix-env$/ s/^#*/#/' "${_profile_path}"
                     printf "\n%s" "[ -f \"${JUVIX_DIR}/env\" ] && source \"${JUVIX_DIR}/env\" # juvix-env" >> "${_profile_path}"
                     ;;
 
                 zsh)
+                    _env_file="env"
                     sed -i -e '/# juvix-env$/ s/^#*/#/' "${_profile_path}"
                     printf "\n%s" "[ -f \"${JUVIX_DIR}/env\" ] && source \"${JUVIX_DIR}/env\" # juvix-env" >> "${_profile_path}"
                     ;;
@@ -376,7 +383,7 @@ adjust_profile() {
             echo "==============================================================================="
             echo
             echo "OK! ${_profile_path} has been modified. Restart your terminal for the changes to take effect,"
-            echo "or type \"source ${JUVIX_DIR}/env\" to apply them in your current terminal session."
+            echo "or type \"source ${JUVIX_DIR}/${_env_file}\" to apply them in your current terminal session."
             return
             ;;
         *)
