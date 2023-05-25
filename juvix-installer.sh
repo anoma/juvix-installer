@@ -163,7 +163,7 @@ fi
 EOF
     cat <<-EOF > "$_fish_env_file" || err "Failed to create env file: $_fish_env_file"
 set -gx PATH "$JUVIX_BIN" \$PATH # juvix-env
-if [ -f "${_llvmbox_install_dir}/bin/clang" ]; then
+if [ -f "${_llvmbox_install_dir}/bin/clang" ];
    set -gx JUVIX_CLANG_PATH "${_llvmbox_install_dir}/bin/clang"
 end
 EOF
