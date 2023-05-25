@@ -81,7 +81,6 @@ main() {
         esac
     done
 
-
     find_shell_name
     local _shell_name="$RETVAL"
     find_profile_path
@@ -131,12 +130,9 @@ set -gx PATH "$JUVIX_BIN" \$PATH # juvix-env
 EOF
 }
 
-get_architecture() {
+get_ostype() {
     local _osttype
-    local _cputype
-    local _arch
     _ostype="$(uname -s)"
-    _cputype="$(uname -m)"
 
     case "$_ostype" in
 
@@ -153,6 +149,16 @@ get_architecture() {
             ;;
 
     esac
+    RETVAL="$_ostype"
+}
+
+get_architecture() {
+    local _osttype
+    local _cputype
+    local _arch
+    get_ostype
+    _ostype="$RETVAL"
+    _cputype="$(uname -m)"
 
     case "$_cputype" in
         x86_64 | x86-64 | x64 | amd64)
@@ -280,6 +286,10 @@ find_shell_name() {
 
 find_profile_path() {
     local _profile_path
+    local _ostype
+    get_ostype
+    _ostype="$RETVAL"
+
     case ${SHELL:-} in
         */zsh)
             if [ -n "${ZDOTDIR:-}" ]; then
@@ -288,10 +298,25 @@ find_profile_path() {
                 _profile_file="$HOME/.zshrc"
             fi ;;
         */bash)
-            _profile_file="$HOME/.bashrc" ;;
+            case "$_ostype" in
+                macos)
+                    _profile_file="$HOME/.bash_profile"
+                    ;;
+                *)
+                    _profile_file="$HOME/.bashrc"
+                    ;;
+            esac
+            ;;
         */sh)
             if [ -n "${BASH:-}" ] ; then
-                _profile_file="$HOME/.bashrc"
+                case "$_ostype" in
+                    macos)
+                        _profile_file="$HOME/.bash_profile"
+                        ;;
+                    *)
+                        _profile_file="$HOME/.bashrc"
+                        ;;
+                esac
             elif [ -n "${ZSH_VERSION:-}" ] ; then
                 _profile_file="$HOME/.zshrc"
             else
