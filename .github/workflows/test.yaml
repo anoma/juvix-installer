@@ -100,11 +100,13 @@ jobs:
       - name: run installer
         shell: zsh --login -e {0}
         run: |
+          export SHELL=/usr/bin/zsh
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
         shell: zsh --login -e {0}
         run: |
+          export SHELL=/usr/bin/zsh
           juvix --help
 
   test-macos-remote-url-zsh:
@@ -117,9 +119,11 @@ jobs:
       - name: run installer
         shell: zsh --login -e {0}
         run: |
+          export SHELL=/usr/local/bin/zsh
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
         shell: zsh --login -e {0}
         run: |
+          export SHELL=/usr/local/bin/zsh
           juvix --help
