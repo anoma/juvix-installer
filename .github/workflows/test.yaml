@@ -26,6 +26,10 @@ jobs:
           cd test
           ./test.sh
 
+      - name: run juvix-installer with -y
+        run: |
+          ./juvix-installer.sh -y
+
   test-macos:
     runs-on: macos-latest
     steps:
@@ -41,3 +45,7 @@ jobs:
         run: |
           cd test
           ./test.sh
+
+      - name: run juvix-installer with -y
+        run: |
+          ./juvix-installer.sh -y
