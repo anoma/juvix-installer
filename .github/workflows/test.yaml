@@ -63,3 +63,25 @@ jobs:
           SHELL=/bin/bash ./juvix-installer.sh -y
           source ~/.local/share/juvix/env
           juvix --help
+
+  test-linux-remote-url:
+    runs-on: ubuntu-latest
+    steps:
+      - name: run installer
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+
+      - name: run juvix
+        run: |
+          juvix --help
+
+  test-macos-remote-url:
+    runs-on: macos-latest
+    steps:
+      - name: run installer
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+
+      - name: run juvix
+        run: |
+          juvix --help
