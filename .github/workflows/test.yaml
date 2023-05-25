@@ -88,6 +88,7 @@ jobs:
       - name: run juvix
         shell: bash -i -e {0}
         run: |
+          set -m
           juvix --help
 
   test-linux-remote-url-zsh:
