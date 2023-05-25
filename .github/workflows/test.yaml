@@ -128,3 +128,41 @@ jobs:
         run: |
           export SHELL=/usr/local/bin/zsh
           juvix --help
+
+  test-linux-remote-url-fish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: install fish
+        run: |
+          sudo apt install fish
+
+      - name: run installer
+        shell: fish -i {0}
+        run: |
+          export SHELL=/usr/bin/fish
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+
+      - name: run juvix
+        shell: zsh -i -e {0}
+        run: |
+          export SHELL=/usr/bin/zsh
+          juvix --help
+
+  test-macos-remote-url-fish:
+    runs-on: macos-latest
+    steps:
+      - name: install fish
+        run: |
+          brew install fish
+
+      - name: run installer
+        shell: zsh -i -e {0}
+        run: |
+          export SHELL=/usr/local/bin/fish
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+
+      - name: run juvix
+        shell: fish -i -e {0}
+        run: |
+          export SHELL=/usr/local/bin/fish
+          juvix --help
