@@ -10,13 +10,21 @@ JUVIX_RELEASE_ROOT="${JUVIX_RELEASE_ROOT:-https://github.com/anoma/juvix/release
 JUVIX_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/juvix
 JUVIX_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
 JUVIX_INSTALLER_NONINTERACTIVE=${JUVIX_INSTALLER_NONINTERACTIVE:=''}
+JUVIX_INSTALLER_ASSUME_YES=${JUVIX_INSTALLER_ASSUME_YES:=''}
 
 usage() {
     cat <<EOF
 juvix-installer 0.1.0
 
 USAGE:
-    juvix-installer
+    juvix-installer [OPTIONS]
+
+OPTIONS:
+    -y
+            Answer "yes" to any prompts. Proceeding with all operations if they are possible.
+
+    -h, --help
+            Print help information
 EOF
 }
 
@@ -42,13 +50,50 @@ main() {
     local _file="${_dir}/${_filename}"
     local _url="${JUVIX_RELEASE_ROOT}/latest/download/${_filename}"
 
+    local _assume_yes
+    for arg in "$@"; do
+        case "$arg" in
+            --help)
+                usage
+                exit 0
+                ;;
+            *)
+                OPTIND=1
+                if [ "${arg%%--*}" = "" ]; then
+                    # Long option (other than --help);
+                    # don't attempt to interpret it.
+                    continue
+                fi
+                while getopts :hy sub_arg "$arg"; do
+                    case "$sub_arg" in
+                        h)
+                            usage
+                            exit 0
+                            ;;
+                        y)
+                            _assume_yes=yes
+                            ;;
+                        *)
+                            ;;
+                        esac
+                done
+                ;;
+        esac
+    done
+
+
     find_shell_name
     local _shell_name="$RETVAL"
     find_profile_path
     local _profile_path="$RETVAL"
 
-    ask_profile "$_shell_name" "$_profile_path"
-    local _adjust_profile_answer="$RETVAL"
+    local _adjust_profile
+    if [ "$_assume_yes" = "yes" ] || [ -n "$JUVIX_INSTALLER_ASSUME_YES" ]; then
+        _adjust_profile="yes"
+    else
+        ask_profile "$_shell_name" "$_profile_path"
+        _adjust_profile="$RETVAL"
+    fi
 
     write_env
 
@@ -62,7 +107,7 @@ main() {
     ignore rm "$_file"
     ignore rmdir "$_dir"
 
-    adjust_profile "$_adjust_profile_answer" "$_shell_name" "$_profile_path"
+    adjust_profile "$_adjust_profile" "$_shell_name" "$_profile_path"
 }
 
 
@@ -261,12 +306,12 @@ ask_profile() {
     local _shell_name=$1
     local _profile_path=$2
     if [ -z "$_shell_name" ] ; then
-        RETVAL="noop"
+        RETVAL="no"
         return
     fi
 
-    local _profile_answer
-    local _profile_action
+    local _answer
+    local _adjust_profile
 
     if [ -z "${JUVIX_INSTALLER_NONINTERACTIVE}" ]; then
         while true; do
@@ -277,14 +322,14 @@ ask_profile() {
                 echo ""
                 echo "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
                 echo ""
-                read -r _profile_answer </dev/tty
-            case $_profile_answer in
+                read -r _answer </dev/tty
+            case $_answer in
                 [Yy]* | "")
-                    _profile_action="adjust"
+                    _adjust_profile="yes"
                     break
                     ;;
                 [Nn]*)
-                    _profile_action="noop"
+                    _adjust_profile="no"
                     break
                     ;;
 
@@ -293,9 +338,9 @@ ask_profile() {
             esac
         done
     else
-        _profile_action="noop"
+        _adjust_profile="no"
     fi
-    RETVAL="$_profile_action"
+    RETVAL="$_adjust_profile"
 }
 
 # Adjust the user profile to prepend the JUVIX_BIN to the PATH
