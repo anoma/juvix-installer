@@ -89,3 +89,37 @@ jobs:
         shell: bash --login -e {0}
         run: |
           juvix --help
+
+  test-linux-remote-url-zsh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: install zsh
+        run: |
+          sudo apt install zsh
+
+      - name: run installer
+        shell: zsh --login -e {0}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+
+      - name: run juvix
+        shell: zsh --login -e {0}
+        run: |
+          juvix --help
+
+  test-macos-remote-url-zsh:
+    runs-on: macos-latest
+    steps:
+      - name: install zsh
+        run: |
+          brew install zsh
+
+      - name: run installer
+        shell: zsh --login -e {0}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+
+      - name: run juvix
+        shell: zsh --login -e {0}
+        run: |
+          juvix --help
