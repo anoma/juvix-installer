@@ -126,6 +126,10 @@ run_assertion_ok() {
         die "juvix env file was not copied to the output"
     fi
 
+    if [ ! -f "$XDG_DATA_HOME"/juvix/env.fish ]; then
+        die "juvix env.fish file was not copied to the output"
+    fi
+
     local _cmd_output
     _cmd_output=$("$XDG_BIN_HOME"/juvix)
 
