@@ -10,7 +10,7 @@ trap 'rm -rf -- "$BASE_TMP"' EXIT
 # common stub parameters
 STUB_TAR=juvix.tar.gz
 
-die() { echo "$*" >&2; exit 2; }
+die() { echo "Test FAIL: $*" >&2; exit 2; }
 
 uname_stub() {
     for arg in "$@"; do
@@ -136,13 +136,25 @@ run_assertion_ok() {
     if ! [ "$_cmd_output" = "Hello from Juvix" ]; then
         die "juvix binary did not produce expected output"
     fi
+
+    if ! fish -c "set -e PATH; set -x PATH /usr/bin /bin; source $XDG_DATA_HOME/juvix/env.fish; juvix" >/dev/null 2>&1 ; then
+        die "sourcing fish environment failed"
+    fi
+
+    if ! zsh -c "unset PATH; export PATH='/usr/bin:/bin'; source $XDG_DATA_HOME/juvix/env; juvix" >/dev/null 2>&1 ; then
+        die "sourcing zsh environment failed"
+    fi
+
+    if ! bash -c "unset PATH; export PATH='/usr/bin:/bin'; source $XDG_DATA_HOME/juvix/env; juvix" >/dev/null 2>&1 ; then
+        die "sourcing zsh environment failed"
+    fi
 }
 
 expected_location() {
     printf "https://github.com/anoma/juvix/releases/latest/download/juvix-%s-%s.tar.gz" "$1" "$2"
 }
 
-# Test: OS=Dawrin,arch=arm64,curl
+echo "Test: OS=Dawrin,arch=arm64,curl"
 STUB_UNAME_M=arm64
 STUB_UNAME_S=Darwin
 EXPECTED_LOCATION=$(expected_location 'macos' 'aarch64')
@@ -150,7 +162,7 @@ JUVIX_INSTALLER_NONINTERACTIVE=1
 SHELL=bash
 run_assertion_ok
 
-# Test: OS=Dawrin,arch=x86_64,curl
+echo "Test: OS=Dawrin,arch=x86_64,curl"
 STUB_UNAME_M=x86_64
 STUB_UNAME_S=Darwin
 EXPECTED_LOCATION=$(expected_location 'macos' 'x86_64')
@@ -158,7 +170,7 @@ JUVIX_INSTALLER_NONINTERACTIVE=1
 SHELL=bash
 run_assertion_ok
 
-# Test: OS=Linux,arch=x86_64,curl
+echo "Test: OS=Linux,arch=x86_64,curl"
 STUB_UNAME_M=x86_64
 STUB_UNAME_S=Linux
 EXPECTED_LOCATION=$(expected_location 'linux' 'x86_64')
@@ -166,7 +178,7 @@ JUVIX_INSTALLER_NONINTERACTIVE=1
 SHELL=bash
 run_assertion_ok
 
-# Test: OS=Linux,arch=amd64,curl
+echo "Test: OS=Linux,arch=amd64,curl"
 STUB_UNAME_M=amd64
 STUB_UNAME_S=Linux
 EXPECTED_LOCATION=$(expected_location 'linux' 'x86_64')
@@ -175,7 +187,7 @@ unset SHELL
 run_assertion_ok
 
 
-# Test: wget is called if curl is not available
+echo "Test: wget is called if curl is not available"
 command() {
     command_stub_no_curl "$@"
 }

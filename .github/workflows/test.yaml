@@ -15,6 +15,11 @@ jobs:
           cd test
           shellcheck -x stub_test.sh
 
+      - name: install shells
+        run: |
+          brew install fish
+          brew install zsh
+
       - name: stub test juvix-installer
         shell: bash
         run: |
@@ -34,6 +39,11 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
+
+      - name: install shells
+        run: |
+          brew install fish
+          brew install zsh
 
       - name: stub test juvix-installer
         shell: bash
