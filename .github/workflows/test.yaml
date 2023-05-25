@@ -68,12 +68,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: run installer
-        shell: bash --login -e {0}
+        shell: bash -e {0}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
-        shell: bash --login -e {0}
+        shell: bash -e {0}
         run: |
           juvix --help
 
@@ -81,12 +81,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: run installer
-        shell: bash --login -e {0}
+        shell: bash -e {0}
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
-        shell: bash --login -e {0}
+        shell: bash -e {0}
         run: |
           juvix --help
 
@@ -98,14 +98,14 @@ jobs:
           sudo apt install zsh
 
       - name: run installer
-        shell: zsh --login -e {0}
+        shell: zsh -e {0}
         run: |
           export SHELL=/usr/bin/zsh
           touch $HOME/.zshrc
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
-        shell: zsh --login -e {0}
+        shell: zsh -e {0}
         run: |
           export SHELL=/usr/bin/zsh
           juvix --help
@@ -118,15 +118,13 @@ jobs:
           brew install zsh
 
       - name: run installer
-        shell: zsh --login -e {0}
+        shell: zsh -e {0}
         run: |
           export SHELL=/usr/local/bin/zsh
-          touch $HOME/.zshrc
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
-        shell: zsh --login -e {0}
+        shell: zsh -e {0}
         run: |
           export SHELL=/usr/local/bin/zsh
-          source $HOME/.zshrc
           juvix --help
