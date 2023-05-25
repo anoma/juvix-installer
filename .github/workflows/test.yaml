@@ -69,6 +69,7 @@ jobs:
     steps:
       - name: run installer
         run: |
+          export SHELL=bash
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
