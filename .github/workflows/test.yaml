@@ -70,7 +70,7 @@ jobs:
       - name: run installer
         shell: bash -i -e {0}
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+          curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/anoma/juvix-installer/$GITHUB_SHA/juvix-installer.sh" | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
         shell: bash -i -e {0}
@@ -83,7 +83,7 @@ jobs:
       - name: run installer
         shell: bash -i -e {0}
         run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+          curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/anoma/juvix-installer/$GITHUB_SHA/juvix-installer.sh" | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
         shell: bash -i -e {0}
@@ -102,7 +102,7 @@ jobs:
         run: |
           export SHELL=/usr/bin/zsh
           touch $HOME/.zshrc
-          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+          curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/anoma/juvix-installer/$GITHUB_SHA/juvix-installer.sh" | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
         shell: zsh -i -e {0}
@@ -121,7 +121,7 @@ jobs:
         shell: zsh -i -e {0}
         run: |
           export SHELL=/usr/local/bin/zsh
-          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+          curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/anoma/juvix-installer/$GITHUB_SHA/juvix-installer.sh" | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
         shell: zsh -i -e {0}
@@ -140,7 +140,7 @@ jobs:
         shell: fish -i {0}
         run: |
           export SHELL=/usr/bin/fish
-          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+          curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/anoma/juvix-installer/$GITHUB_SHA/juvix-installer.sh" | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
         shell: fish -i {0}
@@ -159,7 +159,7 @@ jobs:
         shell: fish -i {0}
         run: |
           export SHELL=/usr/local/bin/fish
-          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
+          curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/anoma/juvix-installer/$GITHUB_SHA/juvix-installer.sh" | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
         shell: fish -i {0}
