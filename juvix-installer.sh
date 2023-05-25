@@ -306,6 +306,7 @@ ask_profile() {
     local _shell_name=$1
     local _profile_path=$2
     if [ -z "$_shell_name" ] ; then
+        say "No shell detected"
         RETVAL="no"
         return
     fi
