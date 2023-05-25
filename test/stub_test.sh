@@ -159,7 +159,7 @@ STUB_UNAME_M=arm64
 STUB_UNAME_S=Darwin
 EXPECTED_LOCATION=$(expected_location 'macos' 'aarch64')
 JUVIX_INSTALLER_NONINTERACTIVE=1
-SHELL=bash
+SHELL=/bin/bash
 run_assertion_ok
 
 echo "Test: OS=Dawrin,arch=x86_64,curl"
@@ -167,7 +167,7 @@ STUB_UNAME_M=x86_64
 STUB_UNAME_S=Darwin
 EXPECTED_LOCATION=$(expected_location 'macos' 'x86_64')
 JUVIX_INSTALLER_NONINTERACTIVE=1
-SHELL=bash
+SHELL=/bin/bash
 run_assertion_ok
 
 echo "Test: OS=Linux,arch=x86_64,curl"
@@ -175,7 +175,7 @@ STUB_UNAME_M=x86_64
 STUB_UNAME_S=Linux
 EXPECTED_LOCATION=$(expected_location 'linux' 'x86_64')
 JUVIX_INSTALLER_NONINTERACTIVE=1
-SHELL=bash
+SHELL=/bin/bash
 run_assertion_ok
 
 echo "Test: OS=Linux,arch=amd64,curl"
@@ -202,5 +202,5 @@ STUB_UNAME_M=arm64
 STUB_UNAME_S=Darwin
 EXPECTED_LOCATION=$(expected_location 'macos' 'aarch64')
 JUVIX_INSTALLER_NONINTERACTIVE=1
-SHELL=bash
+SHELL=/bin/bash
 run_assertion_ok
