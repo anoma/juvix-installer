@@ -128,4 +128,5 @@ jobs:
         shell: zsh --login -e {0}
         run: |
           export SHELL=/usr/local/bin/zsh
+          source $HOME/.zshrc
           juvix --help
