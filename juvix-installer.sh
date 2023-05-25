@@ -134,7 +134,9 @@ main() {
     adjust_profile "$_adjust_profile" "$_shell_name" "$_profile_path"
 
     ignore rm "$_juvix_file"
-    ignore rm "$_llvmbox_file"
+    if [ -f "$_llvmbox_file" ]; then
+        ignore rm "$_llvmbox_file"
+    fi
     ignore rmdir "$_dir"
 }
 
@@ -163,7 +165,7 @@ EOF
 set -gx PATH "$JUVIX_BIN" \$PATH # juvix-env
 if [ -f "${_llvmbox_install_dir}/bin/clang" ]; then
    set -gx JUVIX_CLANG_PATH "${_llvmbox_install_dir}/bin/clang"
-fi
+end
 EOF
 }
 
