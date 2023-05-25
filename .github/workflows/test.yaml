@@ -33,7 +33,9 @@ jobs:
 
       - name: run juvix-installer with -y
         run: |
-          ./juvix-installer.sh -y
+          SHELL=/usr/bin/bash ./juvix-installer.sh -y
+          source ~/.local/share/juvix/env
+          juvix --help
 
   test-macos:
     runs-on: macos-latest
@@ -58,4 +60,6 @@ jobs:
 
       - name: run juvix-installer with -y
         run: |
-          ./juvix-installer.sh -y
+          SHELL=/bin/bash ./juvix-installer.sh -y
+          source ~/.local/share/juvix/env
+          juvix --help
