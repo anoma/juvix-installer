@@ -17,8 +17,8 @@ jobs:
 
       - name: install shells
         run: |
-          brew install fish
-          brew install zsh
+          sudo apt install fish
+          sudo apt install zsh
 
       - name: stub test juvix-installer
         shell: bash
