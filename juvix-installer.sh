@@ -14,7 +14,7 @@ JUVIX_INSTALLER_ASSUME_YES=${JUVIX_INSTALLER_ASSUME_YES:-}
 
 usage() {
     cat <<EOF
-juvix-installer 0.1.0
+juvix-installer 0.2.0
 
 USAGE:
     juvix-installer [OPTIONS]
@@ -30,7 +30,6 @@ EOF
 
 main() {
     downloader --check
-    get_architecture
     need_cmd uname
     need_cmd mktemp
     need_cmd mkdir
@@ -38,17 +37,27 @@ main() {
     need_cmd rmdir
     need_cmd tar
 
-    get_architecture || return 1
-    local _arch="$RETVAL"
-    assert_nz "$_arch" "arch"
+    get_juvix_architecture || return 1
+    local _juvix_arch="$RETVAL"
+    assert_nz "$_juvix_arch" "_juvix_arch"
+
+    get_llvmbox_architecture || return 1
+    local _llvmbox_arch="$RETVAL"
+    assert_nz "$_llvmbox_arch" "_llvmbox_arch"
 
     local _dir
     if ! _dir="$(ensure mktemp -d)"; then
         exit 1
     fi
-    local _filename="juvix-${_arch}.tar.gz"
-    local _file="${_dir}/${_filename}"
-    local _url="${JUVIX_RELEASE_ROOT}/latest/download/${_filename}"
+    local _juvix_filename="juvix-${_juvix_arch}.tar.gz"
+    local _juvix_file="${_dir}/${_juvix_filename}"
+    local _juvix_url="${JUVIX_RELEASE_ROOT}/latest/download/${_juvix_filename}"
+
+    local _llvmbox_version="15.0.7%2B3"
+    local _llvmbox_filename="llvmbox-${_llvmbox_version}-${_llvmbox_arch}.tar.xz"
+    local _llvmbox_file="${_dir}/${_llvmbox_filename}"
+    local _llvmbox_url="https://github.com/rsms/llvmbox/releases/download/v${_llvmbox_version}/${_llvmbox_filename}"
+    local _llvmbox_install_dir="${JUVIX_DIR}/llvmbox"
 
     local _assume_yes="no"
     for arg in "$@"; do
@@ -87,6 +96,14 @@ main() {
     find_profile_path
     local _profile_path="$RETVAL"
 
+    local _install_llvmbox
+    if [ "$_assume_yes" = "yes" ] || [ -n "$JUVIX_INSTALLER_ASSUME_YES" ]; then
+        _install_llvmbox="yes"
+    else
+        ask_llvmbox "$_llvmbox_install_dir"
+        _install_llvmbox="$RETVAL"
+    fi
+
     local _adjust_profile
     if [ "$_assume_yes" = "yes" ] || [ -n "$JUVIX_INSTALLER_ASSUME_YES" ]; then
         _adjust_profile="yes"
@@ -95,25 +112,38 @@ main() {
         _adjust_profile="$RETVAL"
     fi
 
-    write_env
+    write_env "$_llvmbox_install_dir"
+
+    if [ "$_install_llvmbox" = "yes" ]; then
+        ensure mkdir -p "$_dir"
+        say 'downloading llvmbox'
+        ensure downloader "$_llvmbox_url" "$_llvmbox_file" "$_llvmbox_arch"
+        say "installing llvmbox into ${_llvmbox_install_dir}"
+        ensure mkdir -p "${_llvmbox_install_dir}"
+        ensure tar -xf "$_llvmbox_file" --strip-components=1 -C "${_llvmbox_install_dir}"
+    fi
 
     printf '%s\n' 'info: downloading juvix' 1>&2
     ensure mkdir -p "$_dir"
-    ensure downloader "$_url" "$_file" "$_arch"
+    ensure downloader "$_juvix_url" "$_juvix_file" "$_juvix_arch"
 
-    printf '%s\n' "info: copying juvix into ${JUVIX_BIN}" 1>&2
+    printf '%s\n' "info: installing juvix into ${JUVIX_BIN}" 1>&2
     ensure mkdir -p "${JUVIX_BIN}"
-    ensure tar -xzf "$_file" -C "${JUVIX_BIN}"
-    ignore rm "$_file"
-    ignore rmdir "$_dir"
+    ensure tar -xzf "$_juvix_file" -C "${JUVIX_BIN}"
 
     adjust_profile "$_adjust_profile" "$_shell_name" "$_profile_path"
+
+    ignore rm "$_juvix_file"
+    ignore rm "$_llvmbox_file"
+    ignore rmdir "$_dir"
 }
 
 
-# Writes a script to $JUVIX_DIR/env that, when sourced, prepends the
-# ${JUVIX_BIN} directory to $PATH if it is not already present there.
+# Writes scripts to $JUVIX_DIR/env and $JUVIX_DIR/env.fish that, when sourced,
+# prepends the ${JUVIX_BIN} directory to $PATH if it is not already present
+# there.
 write_env() {
+    local _llvmbox_install_dir=$1
     ensure mkdir -p "${JUVIX_DIR}"
     local _env_file="${JUVIX_DIR}/env"
     local _fish_env_file="${JUVIX_DIR}/env.fish"
@@ -125,18 +155,21 @@ case ":\$PATH:" in
         export PATH="${JUVIX_BIN}:\$PATH"
         ;;
 esac
+if [ -f "${_llvmbox_install_dir}/bin/clang" ]; then
+   export JUVIX_CLANG_PATH="${_llvmbox_install_dir}/bin/clang"
+fi
 EOF
     cat <<-EOF > "$_fish_env_file" || err "Failed to create env file: $_fish_env_file"
 set -gx PATH "$JUVIX_BIN" \$PATH # juvix-env
+if [ -f "${_llvmbox_install_dir}/bin/clang" ]; then
+   set -gx JUVIX_CLANG_PATH "${_llvmbox_install_dir}/bin/clang"
+fi
 EOF
 }
 
-get_architecture() {
+get_ostype() {
     local _osttype
-    local _cputype
-    local _arch
     _ostype="$(uname -s)"
-    _cputype="$(uname -m)"
 
     case "$_ostype" in
 
@@ -153,6 +186,12 @@ get_architecture() {
             ;;
 
     esac
+    RETVAL="$_ostype"
+}
+
+get_cputype() {
+    local _cputype
+    _cputype="$(uname -m)"
 
     case "$_cputype" in
         x86_64 | x86-64 | x64 | amd64)
@@ -166,12 +205,41 @@ get_architecture() {
         *)
             err "unsupported CPU: $_cputype"
     esac
+    RETVAL="$_cputype"
+}
+
+get_juvix_architecture() {
+    local _ostype
+    get_ostype
+    _ostype="$RETVAL"
+
+    local _cputype
+    get_cputype
+    _cputype="$RETVAL"
+
+    local _arch
 
     if [ "$_ostype" = linux ] && [ "$_cputype" = aarch64 ]; then
         err "linux-aarch64 is not supported"
     fi
 
     _arch="${_ostype}-${_cputype}"
+
+    RETVAL="$_arch"
+}
+
+get_llvmbox_architecture() {
+    local _ostype
+    get_ostype
+    _ostype="$RETVAL"
+
+    local _cputype
+    get_cputype
+    _cputype="$RETVAL"
+
+    local _arch
+
+    _arch="${_cputype}"-"${_ostype}"
 
     RETVAL="$_arch"
 }
@@ -305,6 +373,45 @@ find_profile_path() {
     RETVAL="$_profile_file"
 }
 
+# Ask user if they want to install LLVMbox.
+ask_llvmbox() {
+    local _llvmbox_install_dir=$1
+    local _install_llvmbox
+    local _answer
+
+    if [ -z "${JUVIX_INSTALLER_NONINTERACTIVE}" ]; then
+        while true; do
+                echo "-------------------------------------------------------------------------------"
+                echo ""
+                echo "Do you want to install the LLVM toolchain in ${_llvmbox_install_dir}?"
+                echo ""
+                echo "Juvix requires the LLVM toolchain to compile native binaries."
+                echo ""
+                echo "This installation will not interfere with any other version of LLVM on your system."
+                echo ""
+                echo "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
+                echo ""
+                read -r _answer </dev/tty
+            case $_answer in
+                [Yy]* | "")
+                    _install_llvmbox="yes"
+                    break
+                    ;;
+                [Nn]*)
+                    _install_llvmbox="no"
+                    break
+                    ;;
+
+                *)
+                    ;;
+            esac
+        done
+    else
+        _install_llvmbox="no"
+    fi
+    RETVAL="$_install_llvmbox"
+}
+
 # Ask user if they want to adjust the shell profile.
 ask_profile() {
     local _shell_name=$1
@@ -323,7 +430,7 @@ ask_profile() {
                 echo "-------------------------------------------------------------------------------"
                 echo ""
                 echo "Detected $_shell_name shell on your system..."
-                echo "Do you want to automatically prepend the required PATH variable to \"${_profile_file}\"?"
+                echo "Do you want to automatically setup the shell environment by modifying \"${_profile_file}\"?"
                 echo ""
                 echo "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
                 echo ""
