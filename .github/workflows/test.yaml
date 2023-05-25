@@ -64,19 +64,20 @@ jobs:
           source ~/.local/share/juvix/env
           juvix --help
 
-  test-linux-remote-url:
+  test-linux-remote-url-bash:
     runs-on: ubuntu-latest
     steps:
       - name: run installer
+        shell: bash --login -e {0}
         run: |
-          export SHELL=/bin/bash
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
+        shell: bash --login -e {0}
         run: |
           juvix --help
 
-  test-macos-remote-url:
+  test-macos-remote-url-bash:
     runs-on: macos-latest
     steps:
       - name: run installer
