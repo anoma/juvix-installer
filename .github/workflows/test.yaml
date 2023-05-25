@@ -101,6 +101,7 @@ jobs:
         shell: zsh --login -e {0}
         run: |
           export SHELL=/usr/bin/zsh
+          touch $HOME/.zshrc
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
@@ -120,6 +121,7 @@ jobs:
         shell: zsh --login -e {0}
         run: |
           export SHELL=/usr/local/bin/zsh
+          touch $HOME/.zshrc
           curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/anoma/juvix-installer/main/juvix-installer.sh | JUVIX_INSTALLER_ASSUME_YES=1 sh
 
       - name: run juvix
