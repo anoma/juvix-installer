@@ -9,8 +9,8 @@ JUVIX_RELEASE_ROOT="${JUVIX_RELEASE_ROOT:-https://github.com/anoma/juvix/release
 
 JUVIX_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/juvix
 JUVIX_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
-JUVIX_INSTALLER_NONINTERACTIVE=${JUVIX_INSTALLER_NONINTERACTIVE:=''}
-JUVIX_INSTALLER_ASSUME_YES=${JUVIX_INSTALLER_ASSUME_YES:=''}
+JUVIX_INSTALLER_NONINTERACTIVE=${JUVIX_INSTALLER_NONINTERACTIVE:-}
+JUVIX_INSTALLER_ASSUME_YES=${JUVIX_INSTALLER_ASSUME_YES:-}
 
 usage() {
     cat <<EOF
@@ -256,7 +256,7 @@ downloader() {
 
 find_shell_name() {
     local _shell_name
-    case ${SHELL:=""} in
+    case ${SHELL:-} in
         */zsh)
             _shell_name="zsh" ;;
         */bash)
@@ -280,7 +280,7 @@ find_shell_name() {
 
 find_profile_path() {
     local _profile_path
-    case $SHELL in
+    case ${SHELL:-} in
         */zsh)
             if [ -n "${ZDOTDIR:-}" ]; then
                 _profile_file="$ZDOTDIR/.zshrc"
