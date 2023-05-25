@@ -8,10 +8,12 @@ die() { echo "$*" >&2; exit 2; }
 BASE_TMP=$(mktemp -d)
 trap 'rm -rf -- "$BASE_TMP"' EXIT
 
-export XDG_DATA_HOME=$(mktemp -d "$BASE_TMP"/data.XXXXX)
-export XDG_BIN_HOME=$(mktemp -d "$BASE_TMP"/bin.XXXXX)
-export JUVIX_INSTALLER_NONINTERACTIVE=1
+XDG_DATA_HOME=$(mktemp -d "$BASE_TMP"/data.XXXXX)
+XDG_BIN_HOME=$(mktemp -d "$BASE_TMP"/bin.XXXXX)
 
+XDG_DATA_HOME="$XDG_DATA_HOME" \
+XDG_BIN_HOME="$XDG_BIN_HOME" \
+JUVIX_INSTALLER_NONINTERACTIVE=1 \
 ../juvix-installer.sh
 
 if [ ! -f "$XDG_BIN_HOME"/juvix ]; then
