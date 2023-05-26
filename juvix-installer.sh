@@ -387,7 +387,7 @@ ask_llvmbox() {
                 echo ""
                 echo "Do you want to install the LLVM toolchain in ${_llvmbox_install_dir}?"
                 echo ""
-                echo "Juvix requires the LLVM toolchain to compile native binaries."
+                echo "Juvix requires the LLVM toolchain version 13 or above to compile native and WASM binaries."
                 echo ""
                 echo "This installation will not interfere with any other version of LLVM on your system."
                 echo ""
