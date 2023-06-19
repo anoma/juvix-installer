@@ -46,6 +46,13 @@ jobs:
           source ~/.local/share/juvix/env
           juvix --help
 
+      - name: run juvix-installer with -y --install-vamp-ir
+        run: |
+          SHELL=/usr/bin/bash ./juvix-installer.sh -y --install-vamp-ir
+          source ~/.local/share/juvix/env
+          juvix --help
+          vamp-ir --help
+
   test-macos:
     runs-on: macos-latest
     steps:
@@ -72,6 +79,13 @@ jobs:
           SHELL=/bin/bash ./juvix-installer.sh -y
           source ~/.local/share/juvix/env
           juvix --help
+
+      - name: run juvix-installer with -y --install-vamp-ir
+        run: |
+          SHELL=/usr/bin/bash ./juvix-installer.sh -y --install-vamp-ir
+          source ~/.local/share/juvix/env
+          juvix --help
+          vamp-ir --help
 
   test-linux-remote-url-bash:
     runs-on: ubuntu-latest
