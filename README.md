@@ -5,7 +5,7 @@ A shell script that installs the Juvix compiler binary for Linux and macOS.
 ## Usage
 
 ``` shell
-curl --proto '=https' --tlsv1.2 -sSf https://get.juvix.org | sh
+curl --proto '=https' --tlsv1.2 -sSfL https://get.juvix.org | sh
 ```
 
 ## macOS homebrew installer
