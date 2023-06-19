@@ -6,15 +6,18 @@
 set -u
 
 JUVIX_RELEASE_ROOT="${JUVIX_RELEASE_ROOT:-https://github.com/anoma/juvix/releases}"
+VAMPIR_RELEASE_ROOT="${VAMPIR_RELEASE_ROOT:-https://github.com/anoma/vamp-ir/releases}"
 
 JUVIX_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/juvix
 JUVIX_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
 JUVIX_INSTALLER_NONINTERACTIVE=${JUVIX_INSTALLER_NONINTERACTIVE:-}
 JUVIX_INSTALLER_ASSUME_YES=${JUVIX_INSTALLER_ASSUME_YES:-}
 
+JUVIX_INSTALLER_INSTALL_VAMPIR_YES=${JUVIX_INSTALLER_INSTALL_VAMPIR_YES:-}
+
 usage() {
     cat <<EOF
-juvix-installer 0.2.0
+juvix-installer 0.3.0
 
 USAGE:
     juvix-installer [OPTIONS]
@@ -22,6 +25,10 @@ USAGE:
 OPTIONS:
     -y
             Answer "yes" to any prompts. Proceeding with all operations if they are possible.
+
+    --install-vamp-ir
+
+            Also install the latest vamp-ir binary release
 
     -h, --help
             Print help information
@@ -60,11 +67,15 @@ main() {
     local _llvmbox_install_dir="${JUVIX_DIR}/llvmbox"
 
     local _assume_yes="no"
+    local _install_vampir="no"
     for arg in "$@"; do
         case "$arg" in
             --help)
                 usage
                 exit 0
+                ;;
+            --install-vamp-ir)
+                _install_vampir=yes
                 ;;
             *)
                 OPTIND=1
@@ -131,6 +142,10 @@ main() {
     ensure mkdir -p "${JUVIX_BIN}"
     ensure tar -xzf "$_juvix_file" -C "${JUVIX_BIN}"
 
+    if [ "$_install_vampir" = "yes" ] || [ -n "$JUVIX_INSTALLER_INSTALL_VAMPIR_YES" ]; then
+        install_vampir "$_dir"
+    fi
+
     adjust_profile "$_adjust_profile" "$_shell_name" "$_profile_path"
 
     ignore rm "$_juvix_file"
@@ -140,6 +155,26 @@ main() {
     ignore rmdir "$_dir"
 }
 
+install_vampir() {
+    local _dir="$1"
+    get_vampir_architecture || return 1
+    local _vampir_arch="$RETVAL"
+    assert_nz "$_vampir_arch" "_vampir_arch"
+
+    local _vampir_filename="vamp-ir-${_vampir_arch}.tar.gz"
+    local _vampir_file="${_dir}/${_vampir_filename}"
+    local _vampir_url="${VAMPIR_RELEASE_ROOT}/latest/download/${_vampir_filename}"
+
+    printf '%s\n' 'info: downloading vamp-ir' 1>&2
+    ensure mkdir -p "$_dir"
+    ensure downloader "$_vampir_url" "$_vampir_file" "$_vampir_arch"
+
+    printf '%s\n' "info: installing vamp-ir into ${JUVIX_BIN}" 1>&2
+    ensure mkdir -p "${JUVIX_BIN}"
+    ensure tar -xzf "$_vampir_file" -C "${JUVIX_BIN}"
+
+    ignore rm "$_vampir_file"
+}
 
 # Writes scripts to $JUVIX_DIR/env and $JUVIX_DIR/env.fish that, when sourced,
 # prepends the ${JUVIX_BIN} directory to $PATH if it is not already present
@@ -242,6 +277,33 @@ get_llvmbox_architecture() {
     local _arch
 
     _arch="${_cputype}"-"${_ostype}"
+
+    RETVAL="$_arch"
+}
+
+get_vampir_architecture() {
+    local _ostype
+    get_ostype
+    _ostype="$RETVAL"
+
+    local _cputype
+    get_cputype
+    _cputype="$RETVAL"
+
+    local _vampir_ostype
+    case "$_ostype" in
+
+        macos)
+            _vampir_ostype="apple-darwin"
+            ;;
+
+        linux)
+            _vampir_ostype="unknown-linux-musl"
+            ;;
+    esac
+
+    local _arch
+    _arch="${_cputype}"-"${_vampir_ostype}"
 
     RETVAL="$_arch"
 }
