@@ -5,6 +5,15 @@ on:
   pull_request:
 
 jobs:
+  test-get-juvix-org:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run installer from get.juvix.org
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSfL https://get.juvix.org | sh -s -- -y
+          source ~/.local/share/juvix/env
+          juvix --help
+
   test-linux:
     runs-on: ubuntu-latest
     steps:
