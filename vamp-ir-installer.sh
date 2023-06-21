@@ -1,0 +1,433 @@
+#!/usr/bin/env sh
+# shellcheck shell=dash
+#
+# Adapted from https://github.com/rust-lang/rustup/blob/6242769391e033cd751831a17c24bc00ccde0204/rustup-init.sh
+
+set -u
+
+VAMPIR_RELEASE_ROOT="${VAMPIR_RELEASE_ROOT:-https://github.com/anoma/vamp-ir/releases}"
+
+VAMPIR_DIR=${XDG_DATA_HOME:=$HOME/.local/share}/vamp-ir
+VAMPIR_BIN=${XDG_BIN_HOME:=$HOME/.local/bin}
+VAMPIR_INSTALLER_NONINTERACTIVE=${VAMPIR_INSTALLER_NONINTERACTIVE:-}
+VAMPIR_INSTALLER_ASSUME_YES=${VAMPIR_INSTALLER_ASSUME_YES:-}
+
+usage() {
+    cat <<EOF
+vamp-ir-installer 0.1.0
+
+USAGE:
+    vamp-ir-installer [OPTIONS]
+
+OPTIONS:
+    -y
+            Answer "yes" to any prompts. Proceeding with all operations if they are possible.
+
+    -h, --help
+            Print help information
+EOF
+}
+
+main() {
+    downloader --check
+    need_cmd uname
+    need_cmd mktemp
+    need_cmd mkdir
+    need_cmd rm
+    need_cmd rmdir
+    need_cmd tar
+
+    local _dir
+    if ! _dir="$(ensure mktemp -d)"; then
+        exit 1
+    fi
+
+    local _assume_yes="no"
+    for arg in "$@"; do
+        case "$arg" in
+            --help)
+                usage
+                exit 0
+                ;;
+            *)
+                OPTIND=1
+                if [ "${arg%%--*}" = "" ]; then
+                    # Long option (other than --help);
+                    # don't attempt to interpret it.
+                    continue
+                fi
+                while getopts :hy sub_arg "$arg"; do
+                    case "$sub_arg" in
+                        h)
+                            usage
+                            exit 0
+                            ;;
+                        y)
+                            _assume_yes=yes
+                            ;;
+                        *)
+                            ;;
+                        esac
+                done
+                ;;
+        esac
+    done
+
+    find_shell_name
+    local _shell_name="$RETVAL"
+    find_profile_path
+    local _profile_path="$RETVAL"
+
+    local _adjust_profile
+    if [ "$_assume_yes" = "yes" ] || [ -n "$VAMPIR_INSTALLER_ASSUME_YES" ]; then
+        _adjust_profile="yes"
+    else
+        ask_profile "$_shell_name" "$_profile_path"
+        _adjust_profile="$RETVAL"
+    fi
+
+    write_env
+    install_vampir "$_dir"
+    adjust_profile "$_adjust_profile" "$_shell_name" "$_profile_path"
+
+    ignore rmdir "$_dir"
+}
+
+install_vampir() {
+    local _dir="$1"
+    get_vampir_architecture || return 1
+    local _vampir_arch="$RETVAL"
+    assert_nz "$_vampir_arch" "_vampir_arch"
+
+    local _vampir_filename="vamp-ir-${_vampir_arch}.tar.gz"
+    local _vampir_file="${_dir}/${_vampir_filename}"
+    local _vampir_url="${VAMPIR_RELEASE_ROOT}/latest/download/${_vampir_filename}"
+
+    printf '%s\n' 'info: downloading vamp-ir' 1>&2
+    ensure mkdir -p "$_dir"
+    ensure downloader "$_vampir_url" "$_vampir_file" "$_vampir_arch"
+
+    printf '%s\n' "info: installing vamp-ir into ${VAMPIR_BIN}" 1>&2
+    ensure mkdir -p "${VAMPIR_BIN}"
+    ensure tar -xzf "$_vampir_file" -C "${VAMPIR_BIN}"
+
+    ignore rm "$_vampir_file"
+}
+
+# Writes scripts to $VAMPIR_DIR/env and $VAMPIR_DIR/env.fish that, when sourced,
+# prepends the ${VAMPIR_BIN} directory to $PATH if it is not already present
+# there.
+write_env() {
+    ensure mkdir -p "${VAMPIR_DIR}"
+    local _env_file="${VAMPIR_DIR}/env"
+    local _fish_env_file="${VAMPIR_DIR}/env.fish"
+    cat <<-EOF > "$_env_file" || err "Failed to create env file: $_env_file"
+case ":\$PATH:" in
+    *:"${VAMPIR_BIN}":*)
+        ;;
+    *)
+        export PATH="${VAMPIR_BIN}:\$PATH"
+        ;;
+esac
+EOF
+    cat <<-EOF > "$_fish_env_file" || err "Failed to create env file: $_fish_env_file"
+set -gx PATH "$VAMPIR_BIN" \$PATH # vamp-ir-env
+EOF
+}
+
+get_ostype() {
+    local _osttype
+    _ostype="$(uname -s)"
+
+    case "$_ostype" in
+
+        Linux)
+            _ostype=linux
+            ;;
+
+        Darwin)
+            _ostype=macos
+            ;;
+
+        *)
+            err "unsupported OS: $_ostype"
+            ;;
+
+    esac
+    RETVAL="$_ostype"
+}
+
+get_cputype() {
+    local _cputype
+    _cputype="$(uname -m)"
+
+    case "$_cputype" in
+        x86_64 | x86-64 | x64 | amd64)
+            _cputype=x86_64
+            ;;
+
+        aarch64 | arm64)
+            _cputype=aarch64
+            ;;
+
+        *)
+            err "unsupported CPU: $_cputype"
+    esac
+    RETVAL="$_cputype"
+}
+
+get_vampir_architecture() {
+    local _ostype
+    get_ostype
+    _ostype="$RETVAL"
+
+    local _cputype
+    get_cputype
+    _cputype="$RETVAL"
+
+    local _vampir_ostype
+    case "$_ostype" in
+
+        macos)
+            _vampir_ostype="apple-darwin"
+            ;;
+
+        linux)
+            _vampir_ostype="unknown-linux-musl"
+            ;;
+    esac
+
+    local _arch
+    _arch="${_cputype}"-"${_vampir_ostype}"
+
+    RETVAL="$_arch"
+}
+
+say() {
+    printf 'vamp-ir-installer: %s\n' "$1"
+}
+
+err() {
+    say "$1" >&2
+    exit 1
+}
+
+need_cmd() {
+    if ! check_cmd "$1"; then
+        err "need '$1' (command not found)"
+    fi
+}
+
+check_cmd() {
+    command -v "$1" > /dev/null 2>&1
+}
+
+assert_nz() {
+    if [ -z "$1" ]; then err "assert_nz $2"; fi
+}
+
+# Run a command that should never fail. If the command fails execution
+# will immediately terminate with an error showing the failing
+# command.
+ensure() {
+    if ! "$@"; then err "command failed: $*"; fi
+}
+
+# This is just for indicating that commands' results are being
+# intentionally ignored. Usually, because it's being executed
+# as part of error handling.
+ignore() {
+    "$@"
+}
+
+# This wraps curl or wget. Try curl first, if not installed,
+# use wget instead.
+downloader() {
+    local _dld
+    local _err
+    local _status
+    if check_cmd curl; then
+        _dld=curl
+    elif check_cmd wget; then
+        _dld=wget
+    else
+        _dld='curl or wget' # to be used in error message of need_cmd
+    fi
+
+    if [ "$1" = --check ]; then
+        need_cmd "$_dld"
+    elif [ "$_dld" = curl ]; then
+        _err=$(curl --proto '=https' --tlsv1.2 --silent --show-error --fail --location "$1" --output "$2" 2>&1)
+        _status=$?
+        if [ -n "$_err" ]; then
+            echo "$_err" >&2
+            if echo "$_err" | grep -q 404$; then
+                err "installer for platform '$3' not found, this may be unsupported"
+            fi
+        fi
+        return $_status
+    elif [ "$_dld" = wget ]; then
+        _err=$(wget --https-only --secure-protocol=TLSv1_2 "$1" -O "$2" 2>&1)
+        _status=$?
+        if [ -n "$_err" ]; then
+            echo "$_err" >&2
+            if echo "$_err" | grep -q ' 404 Not Found$'; then
+                err "installer for platform '$3' not found, this may be unsupported"
+            fi
+        fi
+        return $_status
+    else
+        err "Unknown downloader"
+    fi
+}
+
+find_shell_name() {
+    local _shell_name
+    case ${SHELL:-} in
+        */zsh)
+            _shell_name="zsh" ;;
+        */bash)
+            _shell_name="bash" ;;
+        */sh) # login shell is sh, but might be a symlink to bash or zsh
+            if [ -n "${BASH:-}" ] ; then
+                _shell_name="bash"
+            elif [ -n "${ZSH_VERSION:-}" ] ; then
+                _shell_name="zsh"
+            else
+                _shell_name=""
+            fi
+            ;;
+        */fish)
+            _shell_name="fish" ;;
+        *)
+            _shell_name="" ;;
+    esac
+    RETVAL="$_shell_name"
+}
+
+find_profile_path() {
+    local _profile_path
+    case ${SHELL:-} in
+        */zsh)
+            if [ -n "${ZDOTDIR:-}" ]; then
+                _profile_file="$ZDOTDIR/.zshrc"
+            else
+                _profile_file="$HOME/.zshrc"
+            fi ;;
+        */bash)
+            _profile_file="$HOME/.bashrc" ;;
+        */sh)
+            if [ -n "${BASH:-}" ] ; then
+                _profile_file="$HOME/.bashrc"
+            elif [ -n "${ZSH_VERSION:-}" ] ; then
+                _profile_file="$HOME/.zshrc"
+            else
+                _profile_file=""
+            fi
+            ;;
+        */fish)
+            _profile_file="$HOME/.config/fish/config.fish" ;;
+        *) _profile_file="" ;;
+    esac
+    RETVAL="$_profile_file"
+}
+
+# Ask user if they want to adjust the shell profile.
+ask_profile() {
+    local _shell_name=$1
+    local _profile_path=$2
+    if [ -z "$_shell_name" ] ; then
+        say "No shell detected"
+        RETVAL="no"
+        return
+    fi
+
+    local _answer
+    local _adjust_profile
+
+    if [ -z "${VAMPIR_INSTALLER_NONINTERACTIVE}" ]; then
+        while true; do
+                echo "-------------------------------------------------------------------------------"
+                echo ""
+                echo "Detected $_shell_name shell on your system..."
+                echo "Do you want to automatically setup the shell environment by modifying \"${_profile_file}\"?"
+                echo ""
+                echo "[Y] Yes  [N] No  [?] Help (default is \"Y\")."
+                echo ""
+                read -r _answer </dev/tty
+            case $_answer in
+                [Yy]* | "")
+                    _adjust_profile="yes"
+                    break
+                    ;;
+                [Nn]*)
+                    _adjust_profile="no"
+                    break
+                    ;;
+
+                *)
+                    ;;
+            esac
+        done
+    else
+        _adjust_profile="no"
+    fi
+    RETVAL="$_adjust_profile"
+}
+
+# Adjust the user profile to prepend the VAMPIR_BIN to the PATH
+adjust_profile() {
+    local _adjust_profile=$1
+    local _shell_name=$2
+    local _profile_path=$3
+
+    local _env_file=
+    case "$_adjust_profile" in
+        yes)
+            case "$_shell_name" in
+                "")
+                    warn_path "Couldn't figure out login shell!"
+                    return
+                    ;;
+                fish)
+                    _env_file="env.fish"
+                    sed -i -e '/# vamp-ir-env$/ s/^#*/#/' "${_profile_path}"
+                    printf "\n%s" "[ -f \"${VAMPIR_DIR}/env.fish\" ] && source \"${VAMPIR_DIR}/env.fish\" # vamp-ir-env" >> "${_profile_path}"
+                    ;;
+                bash)
+                    _env_file="env"
+                    sed -i -e '/# vamp-ir-env$/ s/^#*/#/' "${_profile_path}"
+                    printf "\n%s" "[ -f \"${VAMPIR_DIR}/env\" ] && source \"${VAMPIR_DIR}/env\" # vamp-ir-env" >> "${_profile_path}"
+                    ;;
+
+                zsh)
+                    _env_file="env"
+                    sed -i -e '/# vamp-ir-env$/ s/^#*/#/' "${_profile_path}"
+                    printf "\n%s" "[ -f \"${VAMPIR_DIR}/env\" ] && source \"${VAMPIR_DIR}/env\" # vamp-ir-env" >> "${_profile_path}"
+                    ;;
+            esac
+            echo
+            echo "==============================================================================="
+            echo
+            echo "OK! ${_profile_path} has been modified. Restart your terminal for the changes to take effect,"
+            echo "or type \"source ${VAMPIR_DIR}/${_env_file}\" to apply them in your current terminal session."
+            return
+            ;;
+        *)
+            warn_path ""
+            ;;
+    esac
+}
+
+warn_path() {
+    local _msg=$1
+    echo
+    echo "==============================================================================="
+    echo "$_msg"
+    echo "In order to run vamp-ir, you need to adjust your PATH variable."
+    echo "To do so, you may want to run 'source $VAMPIR_DIR/env' in your current terminal"
+    echo "session as well as your shell configuration (e.g. ~/.bashrc)."
+}
+
+
+main "$@" || exit 1
