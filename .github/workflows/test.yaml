@@ -53,6 +53,38 @@ jobs:
           juvix --help
           vamp-ir --help
 
+  test-linux-vamp-ir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run ShellCheck
+        run: |
+          shellcheck -x vamp-ir-installer.sh
+          cd test
+          shellcheck -x stub_test_vamp-ir.sh
+
+      - name: install shells
+        run: |
+          sudo apt install fish
+          sudo apt install zsh
+
+      - name: stub test vamp-ir-installer
+        shell: bash
+        run: |
+          cd test
+          ./stub_test_vamp-ir.sh
+
+      - name: test vamp-ir-installer
+        run: |
+          cd test
+          ./test_vamp-ir.sh
+
+      - name: run juvix-installer with -y
+        run: |
+          SHELL=/usr/bin/bash ./vamp-ir-installer.sh -y
+          source ~/.local/share/vamp-ir/env
+          vamp-ir --help
+
   test-macos:
     runs-on: macos-latest
     steps:
@@ -85,6 +117,33 @@ jobs:
           SHELL=/usr/bin/bash ./juvix-installer.sh -y --install-vamp-ir
           source ~/.local/share/juvix/env
           juvix --help
+          vamp-ir --help
+
+  test-macos-vamp-ir:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: install shells
+        run: |
+          brew install fish
+          brew install zsh
+
+      - name: stub test vamp-ir-installer
+        shell: bash
+        run: |
+          cd test
+          ./stub_test_vamp-ir.sh
+
+      - name: test vamp-ir-installer
+        run: |
+          cd test
+          ./test_vamp-ir.sh
+
+      - name: run vamp-ir-installer with -y
+        run: |
+          SHELL=/bin/bash ./vamp-ir-installer.sh -y
+          source ~/.local/share/vamp-ir/env
           vamp-ir --help
 
   test-linux-remote-url-bash:
