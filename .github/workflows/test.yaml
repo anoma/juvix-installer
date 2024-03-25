@@ -13,6 +13,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSfL https://get.juvix.org | sh -s -- -y
           source ~/.local/share/juvix/env
           juvix --help
+          juvix --version
 
   test-linux:
     runs-on: ubuntu-latest
@@ -138,6 +139,7 @@ jobs:
         run: |
           export SHELL=/usr/bin/zsh
           juvix --help
+          juvix --version
 
   test-macos-remote-url-zsh:
     runs-on: macos-latest
@@ -177,6 +179,7 @@ jobs:
         run: |
           export SHELL=/usr/bin/zsh
           juvix --help
+          juvix --version
 
   test-macos-remote-url-fish:
     runs-on: macos-latest
