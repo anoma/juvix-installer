@@ -45,12 +45,14 @@ jobs:
           SHELL=/usr/bin/bash ./juvix-installer.sh -y
           source ~/.local/share/juvix/env
           juvix --help
+          juvix --version
 
       - name: run juvix-installer with -y --install-vamp-ir
         run: |
           SHELL=/usr/bin/bash ./juvix-installer.sh -y --install-vamp-ir
           source ~/.local/share/juvix/env
           juvix --help
+          juvix --version
           vamp-ir --help
 
   test-macos:
@@ -79,12 +81,14 @@ jobs:
           SHELL=/bin/bash ./juvix-installer.sh -y
           source ~/.local/share/juvix/env
           juvix --help
+          juvix --version
 
       - name: run juvix-installer with -y --install-vamp-ir
         run: |
           SHELL=/usr/bin/bash ./juvix-installer.sh -y --install-vamp-ir
           source ~/.local/share/juvix/env
           juvix --help
+          juvix --version
           vamp-ir --help
 
   test-linux-remote-url-bash:
@@ -99,6 +103,7 @@ jobs:
         shell: bash -i -e {0}
         run: |
           juvix --help
+          juvix --version
 
   test-macos-remote-url-bash:
     runs-on: macos-latest
@@ -112,6 +117,7 @@ jobs:
         shell: bash -i -e {0}
         run: |
           juvix --help
+          juvix --version
 
   test-linux-remote-url-zsh:
     runs-on: ubuntu-latest
@@ -151,6 +157,7 @@ jobs:
         run: |
           export SHELL=/usr/local/bin/zsh
           juvix --help
+          juvix --version
 
   test-linux-remote-url-fish:
     runs-on: ubuntu-latest
@@ -189,3 +196,4 @@ jobs:
         run: |
           export SHELL=/usr/local/bin/fish
           juvix --help
+          juvix --version
