@@ -3,6 +3,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test-get-juvix-org:
@@ -198,5 +199,33 @@ jobs:
         shell: fish -i {0}
         run: |
           export SHELL=/usr/local/bin/fish
+          juvix --help
+          juvix --version
+
+  test-macos-x86-brew:
+    runs-on: macos-13
+    steps:
+      - name: install juvix
+        run: |
+          brew update
+          brew tap anoma/juvix
+          brew install juvix
+
+      - name: run juvix
+        run: |
+          juvix --help
+          juvix --version
+
+  test-macos-aarch64-brew:
+    runs-on: macos-latest
+    steps:
+      - name: install juvix
+        run: |
+          brew update
+          brew tap anoma/juvix
+          brew install juvix
+
+      - name: run juvix
+        run: |
           juvix --help
           juvix --version
